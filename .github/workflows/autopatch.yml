@@ -1,0 +1,39 @@
+# Checks whether upstream has released a new tag for a given
+# version range, and auto-patch with 'patch/nothread.patch'.
+name: Daily auto-patch
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '0 7 * * *'
+
+permissions:
+  # write is done via deploy key set in secrets.DEPLOY_KEY
+  # which must have write access to the repository.
+  contents: read
+
+jobs:
+  build:
+    name: auto-patch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Save deploy key
+        run: |
+          echo "${DEPLOY_KEY}" > "${RUNNER_TEMP}/deploy.key"
+          chmod 0600 "${RUNNER_TEMP}/deploy.key"
+        env:
+          DEPLOY_KEY: ${{secrets.DEPLOY_KEY}}
+      - name: Auto-patch branch "no-thread"
+        run: |
+          git remote set-url origin git@github.com:pjbgf/git2go.git
+          export GIT_SSH_COMMAND="ssh -i ${RUNNER_TEMP}/deploy.key -o IdentitiesOnly=yes"
+          patch/auto-patch.sh
+      - name: Clean-up
+        if: always()
+        run: |
+          rm -rf "${RUNNER_TEMP}/deploy.key"
