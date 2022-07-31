@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-tag_suffix="-nothread"
+tag_suffix="-nothread-check"
 
 initial_branch="$(git rev-parse --abbrev-ref HEAD)"
 repo_root="$(git rev-parse --show-toplevel)"
