@@ -9,9 +9,8 @@ on:
     - cron: '0 7 * * *'
 
 permissions:
-  # write is done via deploy key set in secrets.DEPLOY_KEY
-  # which must have write access to the repository.
-  contents: read
+  # read and write is done via deploy key set in secrets.DEPLOY_KEY.
+  contents: none
 
 jobs:
   build:
@@ -21,19 +20,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
+          ssh-key: ${{secrets.DEPLOY_KEY}}
           fetch-depth: 0
-      - name: Save deploy key
+      - name: Auto-patch upstream tag
         run: |
-          echo "${DEPLOY_KEY}" > "${RUNNER_TEMP}/deploy.key"
-          chmod 0600 "${RUNNER_TEMP}/deploy.key"
-        env:
-          DEPLOY_KEY: ${{secrets.DEPLOY_KEY}}
-      - name: Auto-patch branch "no-thread"
-        run: |
-          git remote set-url origin git@github.com:pjbgf/git2go.git
-          export GIT_SSH_COMMAND="ssh -i ${RUNNER_TEMP}/deploy.key -o IdentitiesOnly=yes"
           patch/auto-patch.sh
-      - name: Clean-up
-        if: always()
-        run: |
-          rm -rf "${RUNNER_TEMP}/deploy.key"
