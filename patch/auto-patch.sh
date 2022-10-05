@@ -8,7 +8,7 @@ initial_branch="$(git rev-parse --abbrev-ref HEAD)"
 repo_root="$(git rev-parse --show-toplevel)"
 
 # Latest upstream tag within tag pattern.
-upstream_tag=$(git ls-remote https://github.com/libgit2/git2go "refs/tags/v33.0.*" | cut --delimiter='/' --fields=3 | sort -u | tail -n1)
+upstream_tag=$(git ls-remote https://github.com/libgit2/git2go "refs/tags/v35.0.*" | cut --delimiter='/' --fields=3 | sort -u | tail -n1)
 if [ -z "${upstream_tag}" ]; then
     echo "error finding latest upstream tag"
     exit 1
