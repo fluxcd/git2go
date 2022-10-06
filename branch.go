@@ -111,6 +111,9 @@ func (repo *Repository) CreateBranch(branchName string, target *Commit, force bo
 	ret := C.git_branch_create(&ptr, repo.ptr, cBranchName, target.cast_ptr, cForce)
 	runtime.KeepAlive(repo)
 	runtime.KeepAlive(target)
+	runtime.KeepAlive(cBranchName)
+	runtime.KeepAlive(cForce)
+	runtime.KeepAlive(ptr)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
