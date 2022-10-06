@@ -1102,6 +1102,10 @@ func (o *Remote) Connect(direction ConnectDirection, callbacks *RemoteCallbacks,
 
 	ret := C.git_remote_connect(o.ptr, C.git_direction(direction), ccallbacks, cproxy, &cheaders)
 	runtime.KeepAlive(o)
+	runtime.KeepAlive(ccallbacks)
+	runtime.KeepAlive(cproxy)
+	runtime.KeepAlive(cheaders)
+
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
 	}
