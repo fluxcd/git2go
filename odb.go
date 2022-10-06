@@ -130,6 +130,9 @@ func (v *Odb) ReadHeader(oid *Oid) (uint64, ObjectType, error) {
 }
 
 func (v *Odb) Exists(oid *Oid) bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_odb_exists(v.ptr, oid.toC())
 	runtime.KeepAlive(v)
 	runtime.KeepAlive(oid)
@@ -351,18 +354,27 @@ func (v *OdbObject) Free() {
 }
 
 func (object *OdbObject) Id() (oid *Oid) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := newOidFromC(C.git_odb_object_id(object.ptr))
 	runtime.KeepAlive(object)
 	return ret
 }
 
 func (object *OdbObject) Len() (len uint64) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := uint64(C.git_odb_object_size(object.ptr))
 	runtime.KeepAlive(object)
 	return ret
 }
 
 func (object *OdbObject) Type() ObjectType {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := ObjectType(C.git_odb_object_type(object.ptr))
 	runtime.KeepAlive(object)
 	return ret
@@ -371,6 +383,9 @@ func (object *OdbObject) Type() ObjectType {
 // Data returns a slice pointing to the unmanaged object memory. You must make
 // sure the object is referenced for at least as long as the slice is used.
 func (object *OdbObject) Data() (data []byte) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var c_blob unsafe.Pointer = C.git_odb_object_data(object.ptr)
 	var blob []byte
 

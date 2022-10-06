@@ -235,6 +235,9 @@ func (c *SubmoduleCollection) SetUrl(submodule, url string) error {
 }
 
 func (sub *Submodule) IndexId() *Oid {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var id *Oid
 	idx := C.git_submodule_index_id(sub.ptr)
 	if idx != nil {
@@ -245,6 +248,9 @@ func (sub *Submodule) IndexId() *Oid {
 }
 
 func (sub *Submodule) HeadId() *Oid {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var id *Oid
 	idx := C.git_submodule_head_id(sub.ptr)
 	if idx != nil {
@@ -255,6 +261,9 @@ func (sub *Submodule) HeadId() *Oid {
 }
 
 func (sub *Submodule) WdId() *Oid {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var id *Oid
 	idx := C.git_submodule_wd_id(sub.ptr)
 	if idx != nil {
@@ -265,6 +274,9 @@ func (sub *Submodule) WdId() *Oid {
 }
 
 func (sub *Submodule) Ignore() SubmoduleIgnore {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	o := C.git_submodule_ignore(sub.ptr)
 	runtime.KeepAlive(sub)
 	return SubmoduleIgnore(o)
@@ -287,6 +299,9 @@ func (c *SubmoduleCollection) SetIgnore(submodule string, ignore SubmoduleIgnore
 }
 
 func (sub *Submodule) UpdateStrategy() SubmoduleUpdate {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	o := C.git_submodule_update_strategy(sub.ptr)
 	runtime.KeepAlive(sub)
 	return SubmoduleUpdate(o)

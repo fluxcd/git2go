@@ -87,6 +87,10 @@ func (statusList *StatusList) ByIndex(index int) (StatusEntry, error) {
 	if statusList.ptr == nil {
 		return StatusEntry{}, ErrInvalid
 	}
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_status_byindex(statusList.ptr, C.size_t(index))
 	if ptr == nil {
 		return StatusEntry{}, errors.New("index out of Bounds")
@@ -144,6 +148,9 @@ func (v *Repository) StatusList(opts *StatusOptions) (*StatusList, error) {
 	var ptr *C.git_status_list
 	var copts *C.git_status_options
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	if opts != nil {
 		cpathspec := C.git_strarray{}
 		if opts.Pathspec != nil {
@@ -165,9 +172,6 @@ func (v *Repository) StatusList(opts *StatusOptions) (*StatusList, error) {
 			return nil, MakeGitError(ret)
 		}
 	}
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_status_list_new(&ptr, v.ptr, copts)
 	if ret < 0 {

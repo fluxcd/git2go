@@ -151,6 +151,9 @@ func (diff *Diff) Delta(index int) (DiffDelta, error) {
 	if diff.ptr == nil {
 		return DiffDelta{}, ErrInvalid
 	}
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_diff_get_delta(diff.ptr, C.size_t(index))
 	ret := diffDeltaFromC(ptr)
 	runtime.KeepAlive(diff)
@@ -187,6 +190,9 @@ func (diff *Diff) Free() error {
 		return nil
 	}
 	runtime.SetFinalizer(diff, nil)
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	C.git_diff_free(diff.ptr)
 	diff.ptr = nil
 	return nil
@@ -229,24 +235,36 @@ func (stats *DiffStats) Free() error {
 		return ErrInvalid
 	}
 	runtime.SetFinalizer(stats, nil)
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	C.git_diff_stats_free(stats.ptr)
 	stats.ptr = nil
 	return nil
 }
 
 func (stats *DiffStats) Insertions() int {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := int(C.git_diff_stats_insertions(stats.ptr))
 	runtime.KeepAlive(stats)
 	return ret
 }
 
 func (stats *DiffStats) Deletions() int {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := int(C.git_diff_stats_deletions(stats.ptr))
 	runtime.KeepAlive(stats)
 	return ret
 }
 
 func (stats *DiffStats) FilesChanged() int {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := int(C.git_diff_stats_files_changed(stats.ptr))
 	runtime.KeepAlive(stats)
 	return ret
@@ -448,17 +466,18 @@ func (diff *Diff) ToBuf(format DiffFormat) ([]byte, error) {
 		return nil, ErrInvalid
 	}
 
-	diffBuf := C.git_buf{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	diffBuf := C.git_buf{}
+	defer C.git_buf_dispose(&diffBuf)
+
 	ecode := C.git_diff_to_buf(&diffBuf, diff.ptr, C.git_diff_format_t(format))
 	runtime.KeepAlive(diff)
+
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
-	defer C.git_buf_dispose(&diffBuf)
 
 	return C.GoBytes(unsafe.Pointer(diffBuf.ptr), C.int(diffBuf.size)), nil
 }
@@ -698,12 +717,12 @@ func (v *Repository) DiffTreeToTree(oldTree, newTree *Tree, opts *DiffOptions) (
 		newPtr = newTree.cast_ptr
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	copts := populateDiffOptions(&C.git_diff_options{}, opts, v, &err)
 	defer freeDiffOptions(copts)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_diff_tree_to_tree(&diffPtr, v.ptr, oldPtr, newPtr, copts)
 	runtime.KeepAlive(oldTree)
@@ -725,12 +744,12 @@ func (v *Repository) DiffTreeToWorkdir(oldTree *Tree, opts *DiffOptions) (*Diff,
 		oldPtr = oldTree.cast_ptr
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	copts := populateDiffOptions(&C.git_diff_options{}, opts, v, &err)
 	defer freeDiffOptions(copts)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_diff_tree_to_workdir(&diffPtr, v.ptr, oldPtr, copts)
 	runtime.KeepAlive(oldTree)
@@ -757,12 +776,12 @@ func (v *Repository) DiffTreeToIndex(oldTree *Tree, index *Index, opts *DiffOpti
 		indexPtr = index.ptr
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	copts := populateDiffOptions(&C.git_diff_options{}, opts, v, &err)
 	defer freeDiffOptions(copts)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_diff_tree_to_index(&diffPtr, v.ptr, oldPtr, indexPtr, copts)
 	runtime.KeepAlive(oldTree)
@@ -785,12 +804,12 @@ func (v *Repository) DiffTreeToWorkdirWithIndex(oldTree *Tree, opts *DiffOptions
 		oldPtr = oldTree.cast_ptr
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	copts := populateDiffOptions(&C.git_diff_options{}, opts, v, &err)
 	defer freeDiffOptions(copts)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_diff_tree_to_workdir_with_index(&diffPtr, v.ptr, oldPtr, copts)
 	runtime.KeepAlive(oldTree)
@@ -812,12 +831,12 @@ func (v *Repository) DiffIndexToWorkdir(index *Index, opts *DiffOptions) (*Diff,
 		indexPtr = index.ptr
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	copts := populateDiffOptions(&C.git_diff_options{}, opts, v, &err)
 	defer freeDiffOptions(copts)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_diff_index_to_workdir(&diffPtr, v.ptr, indexPtr, copts)
 	runtime.KeepAlive(index)
@@ -869,11 +888,11 @@ func DiffBlobs(oldBlob *Blob, oldAsPath string, newBlob *Blob, newAsPath string,
 	newBlobPath := C.CString(newAsPath)
 	defer C.free(unsafe.Pointer(newBlobPath))
 
-	copts := populateDiffOptions(&C.git_diff_options{}, opts, repo, &err)
-	defer freeDiffOptions(copts)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	copts := populateDiffOptions(&C.git_diff_options{}, opts, repo, &err)
+	defer freeDiffOptions(copts)
 
 	ret := C._go_git_diff_blobs(oldBlobPtr, oldBlobPath, newBlobPtr, newBlobPath, copts, 1, intHunks, intLines, handle)
 	runtime.KeepAlive(oldBlob)

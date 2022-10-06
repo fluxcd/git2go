@@ -47,6 +47,9 @@ type StashCollection struct {
 func (c *StashCollection) Save(
 	stasher *Signature, message string, flags StashFlag) (*Oid, error) {
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	oid := new(Oid)
 
 	stasherC, err := stasher.toC()
@@ -57,9 +60,6 @@ func (c *StashCollection) Save(
 
 	messageC := C.CString(message)
 	defer C.free(unsafe.Pointer(messageC))
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_stash_save(
 		oid.toC(), c.repo.ptr,

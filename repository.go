@@ -443,6 +443,9 @@ func (v *Repository) CreateCommit(
 	refname string, author, committer *Signature,
 	message string, tree *Tree, parents ...*Commit) (*Oid, error) {
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	oid := new(Oid)
 
 	var cref *C.char
@@ -479,9 +482,6 @@ func (v *Repository) CreateCommit(
 		return nil, err
 	}
 	defer C.git_signature_free(committerSig)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_commit_create(
 		oid.toC(), v.ptr, cref,
@@ -562,6 +562,9 @@ func (v *Repository) CreateCommitBuffer(
 		parentsarg = &cparents[0]
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	authorSig, err := author.toC()
 	if err != nil {
 		return nil, err
@@ -573,9 +576,6 @@ func (v *Repository) CreateCommitBuffer(
 		return nil, err
 	}
 	defer C.git_signature_free(committerSig)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	var buf C.git_buf
 	defer C.git_buf_dispose(&buf)
@@ -631,6 +631,9 @@ func (v *Repository) CreateCommitFromIds(
 		}
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	authorSig, err := author.toC()
 	if err != nil {
 		return nil, err
@@ -642,9 +645,6 @@ func (v *Repository) CreateCommitFromIds(
 		return nil, err
 	}
 	defer C.git_signature_free(committerSig)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_commit_create_from_ids(
 		oid.toC(), v.ptr, cref,
@@ -689,18 +689,27 @@ func (v *Repository) Odb() (odb *Odb, err error) {
 }
 
 func (repo *Repository) Path() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	s := C.GoString(C.git_repository_path(repo.ptr))
 	runtime.KeepAlive(repo)
 	return s
 }
 
 func (repo *Repository) IsBare() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_repository_is_bare(repo.ptr) != 0
 	runtime.KeepAlive(repo)
 	return ret
 }
 
 func (repo *Repository) Workdir() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	s := C.GoString(C.git_repository_workdir(repo.ptr))
 	runtime.KeepAlive(repo)
 	return s
@@ -824,11 +833,11 @@ func (r *Repository) ClearGitIgnoreRules() error {
 // Use this function to get the contents of this file. Don't forget to remove
 // the file after you create the commit.
 func (r *Repository) Message() (string, error) {
-	buf := C.git_buf{}
-	defer C.git_buf_dispose(&buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	buf := C.git_buf{}
+	defer C.git_buf_dispose(&buf)
 
 	cErr := C.git_repository_message(&buf, r.ptr)
 	runtime.KeepAlive(r)
@@ -871,11 +880,11 @@ const (
 )
 
 func (r *Repository) ItemPath(item RepositoryItem) (string, error) {
-	var c_buf C.git_buf
-	defer C.git_buf_dispose(&c_buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var c_buf C.git_buf
+	defer C.git_buf_dispose(&c_buf)
 
 	ret := C.git_repository_item_path(&c_buf, r.ptr, C.git_repository_item_t(item))
 	runtime.KeepAlive(r)

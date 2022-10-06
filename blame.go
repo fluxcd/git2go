@@ -99,6 +99,9 @@ func (blame *Blame) HunkCount() int {
 }
 
 func (blame *Blame) HunkByIndex(index int) (BlameHunk, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_blame_get_hunk_byindex(blame.ptr, C.uint32_t(index))
 	runtime.KeepAlive(blame)
 	if ptr == nil {
@@ -108,6 +111,9 @@ func (blame *Blame) HunkByIndex(index int) (BlameHunk, error) {
 }
 
 func (blame *Blame) HunkByLine(lineno int) (BlameHunk, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_blame_get_hunk_byline(blame.ptr, C.size_t(lineno))
 	runtime.KeepAlive(blame)
 	if ptr == nil {

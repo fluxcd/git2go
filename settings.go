@@ -40,11 +40,11 @@ import (
 )
 
 func SearchPath(level ConfigLevel) (string, error) {
-	var buf C.git_buf
-	defer C.git_buf_dispose(&buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var buf C.git_buf
+	defer C.git_buf_dispose(&buf)
 
 	err := C._go_git_opts_get_search_path(C.int(level), &buf)
 	if err < 0 {

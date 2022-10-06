@@ -792,18 +792,27 @@ func (c *RemoteCollection) Free() {
 }
 
 func (o *Remote) Name() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	s := C.git_remote_name(o.ptr)
 	runtime.KeepAlive(o)
 	return C.GoString(s)
 }
 
 func (o *Remote) Url() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	s := C.git_remote_url(o.ptr)
 	runtime.KeepAlive(o)
 	return C.GoString(s)
 }
 
 func (o *Remote) PushUrl() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	s := C.git_remote_pushurl(o.ptr)
 	runtime.KeepAlive(o)
 	return C.GoString(s)
@@ -971,6 +980,9 @@ func (o *Remote) PushRefspecs() ([]string, error) {
 }
 
 func (o *Remote) RefspecCount() uint {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	count := C.git_remote_refspec_count(o.ptr)
 	runtime.KeepAlive(o)
 	return uint(count)
@@ -1033,6 +1045,9 @@ func freePushOptions(copts *C.git_push_options) {
 // the configuration; msg specifies what to use for the reflog
 // entries. Leave "" to use defaults.
 func (o *Remote) Fetch(refspecs []string, opts *FetchOptions, msg string) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var cmsg *C.char = nil
 	if msg != "" {
 		cmsg = C.CString(msg)
@@ -1048,9 +1063,6 @@ func (o *Remote) Fetch(refspecs []string, opts *FetchOptions, msg string) error 
 
 	coptions := populateFetchOptions(&C.git_fetch_options{}, opts, &err)
 	defer freeFetchOptions(coptions)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_remote_fetch(o.ptr, &crefspecs, coptions, cmsg)
 	runtime.KeepAlive(o)
@@ -1084,6 +1096,9 @@ func (o *Remote) ConnectPush(callbacks *RemoteCallbacks, proxyOpts *ProxyOptions
 //
 // 'headers' are extra HTTP headers to use in this connection.
 func (o *Remote) Connect(direction ConnectDirection, callbacks *RemoteCallbacks, proxyOpts *ProxyOptions, headers []string) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	ccallbacks := populateRemoteCallbacks(&C.git_remote_callbacks{}, callbacks, &err)
 	defer untrackCallbacksPayload(ccallbacks)
@@ -1096,9 +1111,6 @@ func (o *Remote) Connect(direction ConnectDirection, callbacks *RemoteCallbacks,
 		strings: makeCStringsFromStrings(headers),
 	}
 	defer freeStrarray(&cheaders)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_remote_connect(o.ptr, C.git_direction(direction), ccallbacks, cproxy, &cheaders)
 	runtime.KeepAlive(o)
@@ -1172,6 +1184,9 @@ func (o *Remote) Ls(filterRefs ...string) ([]RemoteHead, error) {
 }
 
 func (o *Remote) Push(refspecs []string, opts *PushOptions) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	crefspecs := C.git_strarray{
 		count:   C.size_t(len(refspecs)),
 		strings: makeCStringsFromStrings(refspecs),
@@ -1181,9 +1196,6 @@ func (o *Remote) Push(refspecs []string, opts *PushOptions) error {
 	var err error
 	coptions := populatePushOptions(&C.git_push_options{}, opts, &err)
 	defer freePushOptions(coptions)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_remote_push(o.ptr, &crefspecs, coptions)
 	runtime.KeepAlive(o)
@@ -1197,16 +1209,19 @@ func (o *Remote) Push(refspecs []string, opts *PushOptions) error {
 }
 
 func (o *Remote) PruneRefs() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	return C.git_remote_prune_refs(o.ptr) > 0
 }
 
 func (o *Remote) Prune(callbacks *RemoteCallbacks) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var err error
 	ccallbacks := populateRemoteCallbacks(&C.git_remote_callbacks{}, callbacks, &err)
 	defer untrackCallbacksPayload(ccallbacks)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_remote_prune(o.ptr, ccallbacks)
 	runtime.KeepAlive(o)

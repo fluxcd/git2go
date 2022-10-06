@@ -35,6 +35,9 @@ func (t *Tag) Name() string {
 }
 
 func (t *Tag) Tagger() *Signature {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cast_ptr := C.git_tag_tagger(t.cast_ptr)
 	ret := newSignatureFromC(cast_ptr)
 	runtime.KeepAlive(t)
@@ -42,6 +45,9 @@ func (t *Tag) Tagger() *Signature {
 }
 
 func (t *Tag) Target() *Object {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var ptr *C.git_object
 	ret := C.git_tag_target(&ptr, t.cast_ptr)
 	runtime.KeepAlive(t)
@@ -53,12 +59,18 @@ func (t *Tag) Target() *Object {
 }
 
 func (t *Tag) TargetId() *Oid {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := newOidFromC(C.git_tag_target_id(t.cast_ptr))
 	runtime.KeepAlive(t)
 	return ret
 }
 
 func (t *Tag) TargetType() ObjectType {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := ObjectType(C.git_tag_target_type(t.cast_ptr))
 	runtime.KeepAlive(t)
 	return ret
@@ -79,14 +91,14 @@ func (c *TagsCollection) Create(name string, obj Objecter, tagger *Signature, me
 	cmessage := C.CString(message)
 	defer C.free(unsafe.Pointer(cmessage))
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	taggerSig, err := tagger.toC()
 	if err != nil {
 		return nil, err
 	}
 	defer C.git_signature_free(taggerSig)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	o := obj.AsObject()
 	ret := C.git_tag_create(oid.toC(), c.repo.ptr, cname, o.ptr, taggerSig, cmessage, 0)

@@ -456,6 +456,9 @@ func (v *Index) EntryCount() uint {
 }
 
 func (v *Index) EntryByIndex(index uint) (*IndexEntry, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	centry := C.git_index_get_byindex(v.ptr, C.size_t(index))
 	if centry == nil {
 		return nil, fmt.Errorf("Index out of Bounds")
@@ -514,6 +517,9 @@ func (v *Index) FindPrefix(prefix string) (uint, error) {
 }
 
 func (v *Index) HasConflicts() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_index_has_conflicts(v.ptr) != 0
 	runtime.KeepAlive(v)
 	return ret
@@ -521,6 +527,9 @@ func (v *Index) HasConflicts() bool {
 
 // FIXME: this might return an error
 func (v *Index) CleanupConflicts() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	C.git_index_conflict_cleanup(v.ptr)
 	runtime.KeepAlive(v)
 }

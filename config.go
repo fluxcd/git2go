@@ -125,17 +125,19 @@ func (c *Config) LookupString(name string) (string, error) {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
-	valBuf := C.git_buf{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	valBuf := C.git_buf{}
+	defer C.git_buf_dispose(&valBuf)
+
 	ret := C.git_config_get_string_buf(&valBuf, c.ptr, cname)
 	runtime.KeepAlive(c)
+	runtime.KeepAlive(valBuf)
+	runtime.KeepAlive(cname)
 	if ret < 0 {
 		return "", MakeGitError(ret)
 	}
-	defer C.git_buf_dispose(&valBuf)
 
 	return C.GoString(valBuf.ptr), nil
 }
@@ -369,11 +371,10 @@ type ConfigIterator struct {
 
 // Next returns the next entry for this iterator
 func (iter *ConfigIterator) Next() (*ConfigEntry, error) {
-	var centry *C.git_config_entry
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	var centry *C.git_config_entry
 	ret := C.git_config_next(&centry, iter.ptr)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
@@ -391,11 +392,11 @@ func (iter *ConfigIterator) Free() {
 }
 
 func ConfigFindGlobal() (string, error) {
-	var buf C.git_buf
-	defer C.git_buf_dispose(&buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var buf C.git_buf
+	defer C.git_buf_dispose(&buf)
 
 	ret := C.git_config_find_global(&buf)
 	if ret < 0 {
@@ -406,11 +407,11 @@ func ConfigFindGlobal() (string, error) {
 }
 
 func ConfigFindSystem() (string, error) {
-	var buf C.git_buf
-	defer C.git_buf_dispose(&buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var buf C.git_buf
+	defer C.git_buf_dispose(&buf)
 
 	ret := C.git_config_find_system(&buf)
 	if ret < 0 {
@@ -421,11 +422,11 @@ func ConfigFindSystem() (string, error) {
 }
 
 func ConfigFindXDG() (string, error) {
-	var buf C.git_buf
-	defer C.git_buf_dispose(&buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var buf C.git_buf
+	defer C.git_buf_dispose(&buf)
 
 	ret := C.git_config_find_xdg(&buf)
 	if ret < 0 {
@@ -439,11 +440,11 @@ func ConfigFindXDG() (string, error) {
 //
 // Look for the file in %PROGRAMDATA%\Git\config used by portable git.
 func ConfigFindProgramdata() (string, error) {
-	var buf C.git_buf
-	defer C.git_buf_dispose(&buf)
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	var buf C.git_buf
+	defer C.git_buf_dispose(&buf)
 
 	ret := C.git_config_find_programdata(&buf)
 	if ret < 0 {

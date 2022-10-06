@@ -38,6 +38,9 @@ func (c *Commit) Message() string {
 }
 
 func (c *Commit) MessageEncoding() MessageEncoding {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_commit_message_encoding(c.cast_ptr)
 	if ptr == nil {
 		return MessageEncodingUTF8
@@ -48,6 +51,9 @@ func (c *Commit) MessageEncoding() MessageEncoding {
 }
 
 func (c *Commit) RawMessage() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.GoString(C.git_commit_message_raw(c.cast_ptr))
 	runtime.KeepAlive(c)
 	return ret
@@ -55,6 +61,9 @@ func (c *Commit) RawMessage() string {
 
 // RawHeader gets the full raw text of the commit header.
 func (c *Commit) RawHeader() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.GoString(C.git_commit_raw_header(c.cast_ptr))
 	runtime.KeepAlive(c)
 	return ret
@@ -101,6 +110,8 @@ func (c *Commit) WithSignature(signature string, signatureField string) (*Oid, e
 }
 
 func (c *Commit) ExtractSignature() (string, string, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
 	var c_signed C.git_buf
 	defer C.git_buf_dispose(&c_signed)
@@ -111,10 +122,12 @@ func (c *Commit) ExtractSignature() (string, string, error) {
 	oid := c.Id()
 	repo := C.git_commit_owner(c.cast_ptr)
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	ret := C.git_commit_extract_signature(&c_signature, &c_signed, repo, oid.toC(), nil)
 	runtime.KeepAlive(oid)
+	runtime.KeepAlive(c_signature)
+	runtime.KeepAlive(c_signed)
+	runtime.KeepAlive(repo)
+	runtime.KeepAlive(c)
 	if ret < 0 {
 		return "", "", MakeGitError(ret)
 	} else {
@@ -151,6 +164,9 @@ func (c *Commit) TreeId() *Oid {
 }
 
 func (c *Commit) Author() *Signature {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cast_ptr := C.git_commit_author(c.cast_ptr)
 	ret := newSignatureFromC(cast_ptr)
 	runtime.KeepAlive(c)
@@ -158,6 +174,9 @@ func (c *Commit) Author() *Signature {
 }
 
 func (c *Commit) Committer() *Signature {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cast_ptr := C.git_commit_committer(c.cast_ptr)
 	ret := newSignatureFromC(cast_ptr)
 	runtime.KeepAlive(c)
@@ -165,6 +184,9 @@ func (c *Commit) Committer() *Signature {
 }
 
 func (c *Commit) Parent(n uint) *Commit {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var cobj *C.git_commit
 	ret := C.git_commit_parent(&cobj, c.cast_ptr, C.uint(n))
 	if ret != 0 {
@@ -177,18 +199,27 @@ func (c *Commit) Parent(n uint) *Commit {
 }
 
 func (c *Commit) ParentId(n uint) *Oid {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := newOidFromC(C.git_commit_parent_id(c.cast_ptr, C.uint(n)))
 	runtime.KeepAlive(c)
 	return ret
 }
 
 func (c *Commit) ParentCount() uint {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := uint(C.git_commit_parentcount(c.cast_ptr))
 	runtime.KeepAlive(c)
 	return ret
 }
 
 func (c *Commit) Amend(refname string, author, committer *Signature, message string, tree *Tree) (*Oid, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var cref *C.char
 	if refname == "" {
 		cref = nil
@@ -199,9 +230,6 @@ func (c *Commit) Amend(refname string, author, committer *Signature, message str
 
 	cmsg := C.CString(message)
 	defer C.free(unsafe.Pointer(cmsg))
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	authorSig, err := author.toC()
 	if err != nil {

@@ -83,11 +83,11 @@ func (i *BranchIterator) ForEach(f BranchIteratorFunc) error {
 }
 
 func (repo *Repository) NewBranchIterator(flags BranchType) (*BranchIterator, error) {
-	refType := C.git_branch_t(flags)
-	var ptr *C.git_branch_iterator
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	refType := C.git_branch_t(flags)
+	var ptr *C.git_branch_iterator
 
 	ecode := C.git_branch_iterator_new(&ptr, repo.ptr, refType)
 	runtime.KeepAlive(repo)
@@ -203,17 +203,20 @@ func (repo *Repository) RemoteName(canonicalBranchName string) (string, error) {
 	cName := C.CString(canonicalBranchName)
 	defer C.free(unsafe.Pointer(cName))
 
-	nameBuf := C.git_buf{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	nameBuf := C.git_buf{}
+	defer C.git_buf_dispose(&nameBuf)
+
 	ret := C.git_branch_remote_name(&nameBuf, repo.ptr, cName)
 	runtime.KeepAlive(repo)
+	runtime.KeepAlive(nameBuf)
+	runtime.KeepAlive(cName)
+
 	if ret < 0 {
 		return "", MakeGitError(ret)
 	}
-	defer C.git_buf_dispose(&nameBuf)
 
 	return C.GoString(nameBuf.ptr), nil
 }
@@ -251,17 +254,19 @@ func (repo *Repository) UpstreamName(canonicalBranchName string) (string, error)
 	cName := C.CString(canonicalBranchName)
 	defer C.free(unsafe.Pointer(cName))
 
-	nameBuf := C.git_buf{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	nameBuf := C.git_buf{}
+	defer C.git_buf_dispose(&nameBuf)
+
 	ret := C.git_branch_upstream_name(&nameBuf, repo.ptr, cName)
 	runtime.KeepAlive(repo)
+	runtime.KeepAlive(nameBuf)
+	runtime.KeepAlive(cName)
 	if ret < 0 {
 		return "", MakeGitError(ret)
 	}
-	defer C.git_buf_dispose(&nameBuf)
 
 	return C.GoString(nameBuf.ptr), nil
 }

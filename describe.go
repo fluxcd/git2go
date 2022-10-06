@@ -190,7 +190,11 @@ func newDescribeResultFromC(ptr *C.git_describe_result) *DescribeResult {
 
 // Format prints the DescribeResult as a string.
 func (result *DescribeResult) Format(opts *DescribeFormatOptions) (string, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	resultBuf := C.git_buf{}
+	defer C.git_buf_dispose(&resultBuf)
 
 	var cFormatOpts *C.git_describe_format_options
 	if opts != nil {
@@ -205,15 +209,14 @@ func (result *DescribeResult) Format(opts *DescribeFormatOptions) (string, error
 		}
 	}
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	ecode := C.git_describe_format(&resultBuf, result.ptr, cFormatOpts)
 	runtime.KeepAlive(result)
+	runtime.KeepAlive(resultBuf)
+	runtime.KeepAlive(cFormatOpts)
+
 	if ecode < 0 {
 		return "", MakeGitError(ecode)
 	}
-	defer C.git_buf_dispose(&resultBuf)
 
 	return C.GoString(resultBuf.ptr), nil
 }

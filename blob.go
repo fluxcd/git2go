@@ -41,6 +41,9 @@ func (v *Blob) Contents() []byte {
 }
 
 func (v *Blob) IsBinary() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_blob_is_binary(v.cast_ptr) == 1
 	runtime.KeepAlive(v)
 	return ret

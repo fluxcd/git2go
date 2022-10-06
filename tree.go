@@ -50,6 +50,9 @@ func newTreeEntry(entry *C.git_tree_entry) *TreeEntry {
 }
 
 func (t *Tree) EntryByName(filename string) *TreeEntry {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cname := C.CString(filename)
 	defer C.free(unsafe.Pointer(cname))
 
@@ -105,6 +108,9 @@ func (t *Tree) EntryByPath(path string) (*TreeEntry, error) {
 }
 
 func (t *Tree) EntryByIndex(index uint64) *TreeEntry {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	entry := C.git_tree_entry_byindex(t.cast_ptr, C.size_t(index))
 	if entry == nil {
 		return nil
@@ -116,6 +122,9 @@ func (t *Tree) EntryByIndex(index uint64) *TreeEntry {
 }
 
 func (t *Tree) EntryCount() uint64 {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	num := C.git_tree_entrycount(t.cast_ptr)
 	runtime.KeepAlive(t)
 	return uint64(num)

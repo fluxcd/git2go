@@ -61,17 +61,17 @@ func NewMempack(odb *Odb) (mempack *Mempack, err error) {
 // result in an inconsistent repository (the objects in the memory store won't
 // be accessible).
 func (mempack *Mempack) Dump(repository *Repository) ([]byte, error) {
-	buf := C.git_buf{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+
+	buf := C.git_buf{}
+	defer C.git_buf_dispose(&buf)
 
 	ret := C.git_mempack_dump(&buf, repository.ptr, mempack.ptr)
 	runtime.KeepAlive(repository)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
-	defer C.git_buf_dispose(&buf)
 
 	return C.GoBytes(unsafe.Pointer(buf.ptr), C.int(buf.size)), nil
 }

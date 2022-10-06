@@ -345,6 +345,9 @@ func (r *Repository) OpenRebase(opts *RebaseOptions) (*Rebase, error) {
 
 // OperationAt gets the rebase operation specified by the given index.
 func (rebase *Rebase) OperationAt(index uint) *RebaseOperation {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	operation := C.git_rebase_operation_byindex(rebase.ptr, C.size_t(index))
 
 	return newRebaseOperationFromC(operation)
@@ -479,7 +482,7 @@ func (r *Rebase) Free() {
 }
 
 func newRebaseFromC(ptr *C.git_rebase, repo *Repository, opts *C.git_rebase_options) *Rebase {
-    rebase := &Rebase{ptr: ptr, r: repo, options: opts}
+	rebase := &Rebase{ptr: ptr, r: repo, options: opts}
 	runtime.SetFinalizer(rebase, (*Rebase).Free)
 	return rebase
 }

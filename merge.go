@@ -562,6 +562,9 @@ func MergeFile(ancestor MergeFileInput, ours MergeFileInput, theirs MergeFileInp
 		theirsContents = &theirs.Contents[0]
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var copts *C.git_merge_file_options
 	if options != nil {
 		copts = &C.git_merge_file_options{}
@@ -572,9 +575,6 @@ func MergeFile(ancestor MergeFileInput, ours MergeFileInput, theirs MergeFileInp
 		populateMergeFileOptions(copts, options)
 		defer freeMergeFileOptions(copts)
 	}
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	var result C.git_merge_file_result
 	ecode := C._go_git_merge_file(&result,

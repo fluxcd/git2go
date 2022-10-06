@@ -91,6 +91,9 @@ func newCredential() *Credential {
 }
 
 func (o *Credential) HasUsername() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	if C.git_credential_has_username(o.ptr) == 1 {
 		return true
 	}
@@ -98,6 +101,9 @@ func (o *Credential) HasUsername() bool {
 }
 
 func (o *Credential) Type() CredentialType {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	return (CredentialType)(C._go_git_credential_credtype(o.ptr))
 }
 
@@ -264,6 +270,9 @@ func credentialSSHSignCallback(
 
 // NewCredentialSSHKeyFromSigner creates new SSH credentials using the provided signer.
 func NewCredentialSSHKeyFromSigner(username string, signer ssh.Signer) (*Credential, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	publicKey := signer.PublicKey().Marshal()
 
 	ccred := (*C.git_credential_ssh_custom)(C.calloc(1, C.size_t(unsafe.Sizeof(C.git_credential_ssh_custom{}))))

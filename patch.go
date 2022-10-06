@@ -46,13 +46,13 @@ func (patch *Patch) String() (string, error) {
 	defer runtime.UnlockOSThread()
 
 	var buf C.git_buf
+	defer C.git_buf_dispose(&buf)
 
 	ecode := C.git_patch_to_buf(&buf, patch.ptr)
 	runtime.KeepAlive(patch)
 	if ecode < 0 {
 		return "", MakeGitError(ecode)
 	}
-	defer C.git_buf_dispose(&buf)
 
 	return C.GoString(buf.ptr), nil
 }

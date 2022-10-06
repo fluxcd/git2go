@@ -32,6 +32,9 @@ func (c *NoteCollection) Create(
 		defer C.free(unsafe.Pointer(cref))
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	authorSig, err := author.toC()
 	if err != nil {
 		return nil, err
@@ -46,9 +49,6 @@ func (c *NoteCollection) Create(
 
 	cnote := C.CString(note)
 	defer C.free(unsafe.Pointer(cnote))
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_note_create(
 		oid.toC(), c.repo.ptr, cref, authorSig,
@@ -95,6 +95,9 @@ func (c *NoteCollection) Remove(ref string, author, committer *Signature, id *Oi
 		defer C.free(unsafe.Pointer(cref))
 	}
 
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	authorSig, err := author.toC()
 	if err != nil {
 		return err
@@ -107,9 +110,6 @@ func (c *NoteCollection) Remove(ref string, author, committer *Signature, id *Oi
 	}
 	defer C.git_signature_free(committerSig)
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	ret := C.git_note_remove(c.repo.ptr, cref, authorSig, committerSig, id.toC())
 	runtime.KeepAlive(c)
 	runtime.KeepAlive(id)
@@ -121,21 +121,21 @@ func (c *NoteCollection) Remove(ref string, author, committer *Signature, id *Oi
 
 // DefaultRef returns the default notes reference for a repository
 func (c *NoteCollection) DefaultRef() (string, error) {
-	buf := C.git_buf{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	buf := C.git_buf{}
+	defer C.git_buf_dispose(&buf)
+
 	ecode := C.git_note_default_ref(&buf, c.repo.ptr)
 	runtime.KeepAlive(c)
+	runtime.KeepAlive(buf)
+
 	if ecode < 0 {
 		return "", MakeGitError(ecode)
 	}
 
-	ret := C.GoString(buf.ptr)
-	C.git_buf_dispose(&buf)
-
-	return ret, nil
+	return C.GoString(buf.ptr), nil
 }
 
 // Note
@@ -164,12 +164,18 @@ func (n *Note) Free() error {
 
 // Author returns the signature of the note author
 func (n *Note) Author() *Signature {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_note_author(n.ptr)
 	return newSignatureFromC(ptr)
 }
 
 // Id returns the note object's id
 func (n *Note) Id() *Oid {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_note_id(n.ptr)
 	runtime.KeepAlive(n)
 	return newOidFromC(ptr)
@@ -177,6 +183,9 @@ func (n *Note) Id() *Oid {
 
 // Committer returns the signature of the note committer
 func (n *Note) Committer() *Signature {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := C.git_note_committer(n.ptr)
 	runtime.KeepAlive(n)
 	return newSignatureFromC(ptr)
@@ -184,6 +193,9 @@ func (n *Note) Committer() *Signature {
 
 // Message returns the note message
 func (n *Note) Message() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.GoString(C.git_note_message(n.ptr))
 	runtime.KeepAlive(n)
 	return ret

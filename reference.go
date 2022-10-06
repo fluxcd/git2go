@@ -256,14 +256,17 @@ func (v *Reference) Target() *Oid {
 }
 
 func (v *Reference) SymbolicTarget() string {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var ret string
 	cstr := C.git_reference_symbolic_target(v.ptr)
+	runtime.KeepAlive(v)
 
 	if cstr != nil {
 		return C.GoString(cstr)
 	}
 
-	runtime.KeepAlive(v)
 	return ret
 }
 
@@ -335,18 +338,27 @@ func (v *Reference) Type() ReferenceType {
 }
 
 func (v *Reference) IsBranch() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_reference_is_branch(v.ptr) == 1
 	runtime.KeepAlive(v)
 	return ret
 }
 
 func (v *Reference) IsRemote() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_reference_is_remote(v.ptr) == 1
 	runtime.KeepAlive(v)
 	return ret
 }
 
 func (v *Reference) IsTag() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_reference_is_tag(v.ptr) == 1
 	runtime.KeepAlive(v)
 	return ret
@@ -354,6 +366,9 @@ func (v *Reference) IsTag() bool {
 
 // IsNote checks if the reference is a note.
 func (v *Reference) IsNote() bool {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ret := C.git_reference_is_note(v.ptr) == 1
 	runtime.KeepAlive(v)
 	return ret

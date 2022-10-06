@@ -253,6 +253,9 @@ func (oid *Oid) NCmp(oid2 *Oid, n uint) int {
 }
 
 func ShortenOids(ids []*Oid, minlen int) (int, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	shorten := C.git_oid_shorten_new(C.size_t(minlen))
 	if shorten == nil {
 		panic("Out of memory")
@@ -260,9 +263,6 @@ func ShortenOids(ids []*Oid, minlen int) (int, error) {
 	defer C.git_oid_shorten_free(shorten)
 
 	var ret C.int
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	for _, id := range ids {
 		buf := make([]byte, 41)
@@ -356,6 +356,9 @@ func setCallbackError(errorMessage **C.char, err error) C.int {
 }
 
 func Discover(start string, across_fs bool, ceiling_dirs []string) (string, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ceildirs := C.CString(strings.Join(ceiling_dirs, string(C.GIT_PATH_LIST_SEPARATOR)))
 	defer C.free(unsafe.Pointer(ceildirs))
 
@@ -364,9 +367,6 @@ func Discover(start string, across_fs bool, ceiling_dirs []string) (string, erro
 
 	var buf C.git_buf
 	defer C.git_buf_dispose(&buf)
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_repository_discover(&buf, cstart, cbool(across_fs), ceildirs)
 	if ret < 0 {
