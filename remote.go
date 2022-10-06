@@ -674,7 +674,7 @@ func (c *RemoteCollection) Create(name string, url string) (*Remote, error) {
 	return remote, nil
 }
 
-//CreateWithOptions Creates a repository object with extended options.
+// CreateWithOptions Creates a repository object with extended options.
 func (c *RemoteCollection) CreateWithOptions(url string, option *RemoteCreateOptions) (*Remote, error) {
 	remote := &Remote{repo: c.repo}
 
@@ -1043,6 +1043,9 @@ func (o *Remote) Fetch(refspecs []string, opts *FetchOptions, msg string) error 
 
 	ret := C.git_remote_fetch(o.ptr, &crefspecs, coptions, cmsg)
 	runtime.KeepAlive(o)
+	runtime.KeepAlive(crefspecs)
+	runtime.KeepAlive(coptions)
+	runtime.KeepAlive(cmsg)
 
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
