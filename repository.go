@@ -207,6 +207,10 @@ func (v *Repository) lookupType(id *Oid, t ObjectType) (*Object, error) {
 
 	ret := C.git_object_lookup(&ptr, v.ptr, id.toC(), C.git_object_t(t))
 	runtime.KeepAlive(id)
+	runtime.KeepAlive(t)
+	runtime.KeepAlive(ptr)
+	runtime.KeepAlive(v)
+	runtime.KeepAlive(v.ptr)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
@@ -222,6 +226,8 @@ func (v *Repository) lookupPrefixType(id *Oid, prefix uint, t ObjectType) (*Obje
 
 	ret := C.git_object_lookup_prefix(&ptr, v.ptr, id.toC(), C.size_t(prefix), C.git_object_t(t))
 	runtime.KeepAlive(id)
+	runtime.KeepAlive(ptr)
+	runtime.KeepAlive(v)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
@@ -329,6 +335,10 @@ func (v *Repository) Head() (*Reference, error) {
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_repository_head(&ptr, v.ptr)
+	runtime.KeepAlive(ptr)
+	runtime.KeepAlive(v)
+	runtime.KeepAlive(v.ptr)
+
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
