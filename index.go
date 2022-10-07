@@ -253,6 +253,9 @@ func (v *Index) AddAll(pathspecs []string, flags IndexAddOption, callback IndexM
 		handle,
 	)
 	runtime.KeepAlive(v)
+	runtime.KeepAlive(handle)
+	runtime.KeepAlive(cpathspecs)
+
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
 	}
@@ -289,6 +292,8 @@ func (v *Index) UpdateAll(pathspecs []string, callback IndexMatchedPathCallback)
 		handle,
 	)
 	runtime.KeepAlive(v)
+	runtime.KeepAlive(cpathspecs)
+	runtime.KeepAlive(handle)
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
 	}
@@ -325,6 +330,8 @@ func (v *Index) RemoveAll(pathspecs []string, callback IndexMatchedPathCallback)
 		handle,
 	)
 	runtime.KeepAlive(v)
+	runtime.KeepAlive(cpathspecs)
+	runtime.KeepAlive(handle)
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
 	}

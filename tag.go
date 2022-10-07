@@ -163,17 +163,18 @@ func (c *TagsCollection) CreateLightweight(name string, obj Objecter, force bool
 // List returns the names of all the tags in the repository,
 // eg: ["v1.0.1", "v2.0.0"].
 func (c *TagsCollection) List() ([]string, error) {
-	var strC C.git_strarray
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	var strC C.git_strarray
+	defer C.git_strarray_dispose(&strC)
+
 	ecode := C.git_tag_list(&strC, c.repo.ptr)
 	runtime.KeepAlive(c)
+	runtime.KeepAlive(strC)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
-	defer C.git_strarray_dispose(&strC)
 
 	tags := makeStringsFromCStrings(strC.strings, int(strC.count))
 	return tags, nil
@@ -184,20 +185,22 @@ func (c *TagsCollection) List() ([]string, error) {
 //
 // The pattern is a standard fnmatch(3) pattern http://man7.org/linux/man-pages/man3/fnmatch.3.html
 func (c *TagsCollection) ListWithMatch(pattern string) ([]string, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	var strC C.git_strarray
+	defer C.git_strarray_dispose(&strC)
 
 	patternC := C.CString(pattern)
 	defer C.free(unsafe.Pointer(patternC))
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	ecode := C.git_tag_list_match(&strC, patternC, c.repo.ptr)
 	runtime.KeepAlive(c)
+	runtime.KeepAlive(strC)
+	runtime.KeepAlive(patternC)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
-	defer C.git_strarray_dispose(&strC)
 
 	tags := makeStringsFromCStrings(strC.strings, int(strC.count))
 	return tags, nil

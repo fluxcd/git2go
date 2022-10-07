@@ -650,17 +650,18 @@ func (c *RemoteCollection) untrackRemote(r *Remote) {
 }
 
 func (c *RemoteCollection) List() ([]string, error) {
-	var r C.git_strarray
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	var r C.git_strarray
+	defer C.git_strarray_dispose(&r)
+
 	ecode := C.git_remote_list(&r, c.repo.ptr)
 	runtime.KeepAlive(c.repo)
+	runtime.KeepAlive(r)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
-	defer C.git_strarray_dispose(&r)
 
 	remotes := makeStringsFromCStrings(r.strings, int(r.count))
 	return remotes, nil
@@ -831,6 +832,9 @@ func (c *RemoteCollection) Rename(remote, newname string) ([]string, error) {
 
 	ret := C.git_remote_rename(&cproblems, c.repo.ptr, cremote, cnewname)
 	runtime.KeepAlive(c.repo)
+	runtime.KeepAlive(cproblems)
+	runtime.KeepAlive(cremote)
+	runtime.KeepAlive(cnewname)
 	if ret < 0 {
 		return []string{}, MakeGitError(ret)
 	}
@@ -929,17 +933,18 @@ func freeStrarray(arr *C.git_strarray) {
 }
 
 func (o *Remote) FetchRefspecs() ([]string, error) {
-	crefspecs := C.git_strarray{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	crefspecs := C.git_strarray{}
+	defer C.git_strarray_dispose(&crefspecs)
+
 	ret := C.git_remote_get_fetch_refspecs(&crefspecs, o.ptr)
 	runtime.KeepAlive(o)
+	runtime.KeepAlive(crefspecs)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
-	defer C.git_strarray_dispose(&crefspecs)
 
 	refspecs := makeStringsFromCStrings(crefspecs.strings, int(crefspecs.count))
 	return refspecs, nil
@@ -963,17 +968,18 @@ func (c *RemoteCollection) AddPush(remote, refspec string) error {
 }
 
 func (o *Remote) PushRefspecs() ([]string, error) {
-	crefspecs := C.git_strarray{}
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	crefspecs := C.git_strarray{}
+	defer C.git_strarray_dispose(&crefspecs)
+
 	ret := C.git_remote_get_push_refspecs(&crefspecs, o.ptr)
+	runtime.KeepAlive(o)
+	runtime.KeepAlive(crefspecs)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
-	defer C.git_strarray_dispose(&crefspecs)
-	runtime.KeepAlive(o)
 
 	refspecs := makeStringsFromCStrings(crefspecs.strings, int(crefspecs.count))
 	return refspecs, nil
@@ -990,6 +996,8 @@ func (o *Remote) RefspecCount() uint {
 
 func populateFetchOptions(copts *C.git_fetch_options, opts *FetchOptions, errorTarget *error) *C.git_fetch_options {
 	C.git_fetch_options_init(copts, C.GIT_FETCH_OPTIONS_VERSION)
+	runtime.KeepAlive(copts)
+
 	if opts == nil {
 		return nil
 	}
@@ -997,6 +1005,7 @@ func populateFetchOptions(copts *C.git_fetch_options, opts *FetchOptions, errorT
 	copts.prune = C.git_fetch_prune_t(opts.Prune)
 	copts.update_fetchhead = cbool(opts.UpdateFetchhead)
 	copts.download_tags = C.git_remote_autotag_option_t(opts.DownloadTags)
+	runtime.KeepAlive(opts)
 
 	copts.custom_headers = C.git_strarray{
 		count:   C.size_t(len(opts.Headers)),
@@ -1199,6 +1208,8 @@ func (o *Remote) Push(refspecs []string, opts *PushOptions) error {
 
 	ret := C.git_remote_push(o.ptr, &crefspecs, coptions)
 	runtime.KeepAlive(o)
+	runtime.KeepAlive(crefspecs)
+	runtime.KeepAlive(coptions)
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
 	}

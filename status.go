@@ -174,6 +174,9 @@ func (v *Repository) StatusList(opts *StatusOptions) (*StatusList, error) {
 	}
 
 	ret := C.git_status_list_new(&ptr, v.ptr, copts)
+	runtime.KeepAlive(ptr)
+	runtime.KeepAlive(v)
+	runtime.KeepAlive(copts)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}

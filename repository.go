@@ -129,6 +129,7 @@ func NewRepositoryWrapOdb(odb *Odb) (repo *Repository, err error) {
 	var ptr *C.git_repository
 	ret := C.git_repository_wrap_odb(&ptr, odb.ptr)
 	runtime.KeepAlive(odb)
+	runtime.KeepAlive(ptr)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
@@ -137,11 +138,18 @@ func NewRepositoryWrapOdb(odb *Odb) (repo *Repository, err error) {
 }
 
 func (v *Repository) SetRefdb(refdb *Refdb) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	C.git_repository_set_refdb(v.ptr, refdb.ptr)
 	runtime.KeepAlive(v)
+	runtime.KeepAlive(refdb)
 }
 
 func (v *Repository) Free() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	ptr := v.ptr
 	v.ptr = nil
 	runtime.SetFinalizer(v, nil)
@@ -149,7 +157,9 @@ func (v *Repository) Free() {
 	if v.weak {
 		return
 	}
+
 	C.git_repository_free(ptr)
+	runtime.KeepAlive(ptr)
 }
 
 func (v *Repository) Config() (*Config, error) {
@@ -160,6 +170,7 @@ func (v *Repository) Config() (*Config, error) {
 
 	ret := C.git_repository_config(&config.ptr, v.ptr)
 	runtime.KeepAlive(v)
+	runtime.KeepAlive(config)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
@@ -663,11 +674,17 @@ func (v *Repository) CreateCommitFromIds(
 }
 
 func (v *Odb) Free() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	runtime.SetFinalizer(v, nil)
 	C.git_odb_free(v.ptr)
 }
 
 func (v *Refdb) Free() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	runtime.SetFinalizer(v, nil)
 	C.git_refdb_free(v.ptr)
 }

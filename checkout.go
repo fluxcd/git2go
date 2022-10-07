@@ -176,6 +176,7 @@ func populateCheckoutOptions(copts *C.git_checkout_options, opts *CheckoutOption
 		copts.baseline = opts.Baseline.cast_ptr
 	}
 
+	runtime.KeepAlive(copts)
 	return copts
 }
 
@@ -256,8 +257,6 @@ func (v *Repository) CheckoutTree(tree *Tree, opts *CheckoutOptions) error {
 	ret := C.git_checkout_tree(v.ptr, tree.ptr, cOpts)
 	runtime.KeepAlive(v)
 	runtime.KeepAlive(tree)
-	runtime.KeepAlive(v.ptr)
-	runtime.KeepAlive(tree.ptr)
 	runtime.KeepAlive(cOpts)
 	if ret == C.int(ErrorCodeUser) && err != nil {
 		return err
