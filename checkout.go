@@ -10,6 +10,8 @@ import (
 	"os"
 	"runtime"
 	"unsafe"
+
+	_ "github.com/ianlancetaylor/cgosymbolizer"
 )
 
 type CheckoutNotifyType uint
