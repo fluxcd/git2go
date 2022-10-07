@@ -820,15 +820,15 @@ func (o *Remote) PushUrl() string {
 }
 
 func (c *RemoteCollection) Rename(remote, newname string) ([]string, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cproblems := C.git_strarray{}
 	defer freeStrarray(&cproblems)
 	cnewname := C.CString(newname)
 	defer C.free(unsafe.Pointer(cnewname))
 	cremote := C.CString(remote)
 	defer C.free(unsafe.Pointer(cremote))
-
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ret := C.git_remote_rename(&cproblems, c.repo.ptr, cremote, cnewname)
 	runtime.KeepAlive(c.repo)
@@ -844,16 +844,18 @@ func (c *RemoteCollection) Rename(remote, newname string) ([]string, error) {
 }
 
 func (c *RemoteCollection) SetUrl(remote, url string) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	curl := C.CString(url)
 	defer C.free(unsafe.Pointer(curl))
 	cremote := C.CString(remote)
 	defer C.free(unsafe.Pointer(cremote))
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	ret := C.git_remote_set_url(c.repo.ptr, cremote, curl)
 	runtime.KeepAlive(c.repo)
+	runtime.KeepAlive(cremote)
+	runtime.KeepAlive(curl)
 	if ret < 0 {
 		return MakeGitError(ret)
 	}

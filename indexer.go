@@ -91,7 +91,12 @@ func (indexer *Indexer) Commit() (*Oid, error) {
 
 // Free frees the indexer and its resources.
 func (indexer *Indexer) Free() {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	untrackCallbacksPayload(&indexer.ccallbacks)
 	runtime.SetFinalizer(indexer, nil)
+
 	C.git_indexer_free(indexer.ptr)
+	runtime.KeepAlive(indexer)
 }
