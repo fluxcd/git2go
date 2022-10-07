@@ -227,18 +227,19 @@ func (v *Index) AddFromBuffer(entry *IndexEntry, buffer []byte) error {
 }
 
 func (v *Index) AddAll(pathspecs []string, flags IndexAddOption, callback IndexMatchedPathCallback) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cpathspecs := C.git_strarray{}
 	cpathspecs.count = C.size_t(len(pathspecs))
 	cpathspecs.strings = makeCStringsFromStrings(pathspecs)
-	defer freeStrarray(&cpathspecs)
+	defer C.git_strarray_dispose(&cpathspecs)
 
 	var err error
 	data := indexMatchedPathCallbackData{
 		callback:    callback,
 		errorTarget: &err,
 	}
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	var handle unsafe.Pointer
 	if callback != nil {
@@ -267,18 +268,19 @@ func (v *Index) AddAll(pathspecs []string, flags IndexAddOption, callback IndexM
 }
 
 func (v *Index) UpdateAll(pathspecs []string, callback IndexMatchedPathCallback) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cpathspecs := C.git_strarray{}
 	cpathspecs.count = C.size_t(len(pathspecs))
 	cpathspecs.strings = makeCStringsFromStrings(pathspecs)
-	defer freeStrarray(&cpathspecs)
+	defer C.git_strarray_dispose(&cpathspecs)
 
 	var err error
 	data := indexMatchedPathCallbackData{
 		callback:    callback,
 		errorTarget: &err,
 	}
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	var handle unsafe.Pointer
 	if callback != nil {
@@ -305,18 +307,19 @@ func (v *Index) UpdateAll(pathspecs []string, callback IndexMatchedPathCallback)
 }
 
 func (v *Index) RemoveAll(pathspecs []string, callback IndexMatchedPathCallback) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	cpathspecs := C.git_strarray{}
 	cpathspecs.count = C.size_t(len(pathspecs))
 	cpathspecs.strings = makeCStringsFromStrings(pathspecs)
-	defer freeStrarray(&cpathspecs)
+	defer C.git_strarray_dispose(&cpathspecs)
 
 	var err error
 	data := indexMatchedPathCallbackData{
 		callback:    callback,
 		errorTarget: &err,
 	}
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	var handle unsafe.Pointer
 	if callback != nil {

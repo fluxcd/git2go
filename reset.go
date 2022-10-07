@@ -39,7 +39,7 @@ func (r *Repository) ResetDefaultToCommit(commit *Commit, pathspecs []string) er
 	cpathspecs := C.git_strarray{}
 	cpathspecs.count = C.size_t(len(pathspecs))
 	cpathspecs.strings = makeCStringsFromStrings(pathspecs)
-	defer freeStrarray(&cpathspecs)
+	defer C.git_strarray_dispose(&cpathspecs)
 
 	ret := C.git_reset_default(r.ptr, commit.ptr, &cpathspecs)
 	runtime.KeepAlive(r)

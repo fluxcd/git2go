@@ -1070,7 +1070,7 @@ func (o *Remote) Fetch(refspecs []string, opts *FetchOptions, msg string) error 
 		count:   C.size_t(len(refspecs)),
 		strings: makeCStringsFromStrings(refspecs),
 	}
-	defer freeStrarray(&crefspecs)
+	defer C.git_strarray_dispose(&crefspecs)
 
 	coptions := populateFetchOptions(&C.git_fetch_options{}, opts, &err)
 	defer freeFetchOptions(coptions)
@@ -1121,7 +1121,7 @@ func (o *Remote) Connect(direction ConnectDirection, callbacks *RemoteCallbacks,
 		count:   C.size_t(len(headers)),
 		strings: makeCStringsFromStrings(headers),
 	}
-	defer freeStrarray(&cheaders)
+	defer C.git_strarray_dispose(&cheaders)
 
 	ret := C.git_remote_connect(o.ptr, C.git_direction(direction), ccallbacks, cproxy, &cheaders)
 	runtime.KeepAlive(o)
@@ -1202,7 +1202,7 @@ func (o *Remote) Push(refspecs []string, opts *PushOptions) error {
 		count:   C.size_t(len(refspecs)),
 		strings: makeCStringsFromStrings(refspecs),
 	}
-	defer freeStrarray(&crefspecs)
+	defer C.git_strarray_dispose(&crefspecs)
 
 	var err error
 	coptions := populatePushOptions(&C.git_push_options{}, opts, &err)

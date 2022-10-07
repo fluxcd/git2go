@@ -156,7 +156,7 @@ func (v *Repository) StatusList(opts *StatusOptions) (*StatusList, error) {
 		if opts.Pathspec != nil {
 			cpathspec.count = C.size_t(len(opts.Pathspec))
 			cpathspec.strings = makeCStringsFromStrings(opts.Pathspec)
-			defer freeStrarray(&cpathspec)
+			defer C.git_strarray_dispose(&cpathspec)
 		}
 
 		copts = &C.git_status_options{
